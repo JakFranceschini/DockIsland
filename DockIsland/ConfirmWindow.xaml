@@ -1,0 +1,78 @@
+<Window x:Class="DockIsland.ConfirmWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DockIsland"
+        Title="DockIsland" SizeToContent="WidthAndHeight"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI"
+        TextOptions.TextFormattingMode="Ideal">
+
+    <Window.Resources>
+        <!-- Botão do popup: arredondado, escurece/clareia no hover e "afunda" ao clicar -->
+        <Style x:Key="DlgBtn" TargetType="Button">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="14" Background="{TemplateBinding Background}"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
+                            <Grid>
+                                <Border x:Name="hv" CornerRadius="14" Background="{DynamicResource W_22}" Opacity="0"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="hv" Property="Opacity" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="RenderTransform">
+                                    <Setter.Value><ScaleTransform ScaleX="0.97" ScaleY="0.97"/></Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border x:Name="Card" Margin="28" Width="340" Background="#80000000" local:Glass.Blur="True" BorderBrush="{DynamicResource W_2E}" BorderThickness="1" CornerRadius="30" Padding="26,26,26,22"
+            RenderTransformOrigin="0.5,0.5" Opacity="0">
+        <Border.RenderTransform><ScaleTransform x:Name="CardScale" ScaleX="0.94" ScaleY="0.94"/></Border.RenderTransform>
+
+        <StackPanel>
+            <Border Width="56" Height="56" CornerRadius="28" Background="#26FF453A" HorizontalAlignment="Center">
+                <TextBlock x:Name="IconGlyph" Text="&#xE7E8;" Foreground="#FF453A" FontSize="24"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+
+            <TextBlock x:Name="TitleText" Text="Desligar o computador?" Foreground="{DynamicResource FgBrush}" FontSize="19"
+                       FontWeight="SemiBold" TextAlignment="Center" Margin="0,16,0,0"/>
+            <TextBlock x:Name="SubText" Foreground="{DynamicResource W_A0}" FontSize="13" TextAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,8,0,0"
+                       Text="Salve seu trabalho antes de continuar. Os programas abertos serão fechados."/>
+
+            <Grid Margin="0,22,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="CancelBtn" Style="{StaticResource DlgBtn}" Background="{DynamicResource W_33}"
+                        Content="Cancelar" Click="Cancel_Click"/>
+                <Button x:Name="OkBtn" Grid.Column="2" Style="{StaticResource DlgBtn}" Foreground="White" Background="#FF453A"
+                        Content="Desligar" Click="Ok_Click"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

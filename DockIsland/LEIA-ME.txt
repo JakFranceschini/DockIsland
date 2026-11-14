@@ -1,0 +1,246 @@
+DOCKISLAND PARA WINDOWS (WPF / .NET 8)
+
+REQUISITOS
+- Windows 10 (1809+) ou Windows 11
+- .NET 8 SDK  ->  https://dotnet.microsoft.com/download/dotnet/8.0
+
+COMO COMPILAR
+- Dê dois cliques em compilar.bat  (gera publish\DockIsland.exe)
+  ou, no terminal:  dotnet run
+  (feche a ilha antes de recompilar: engrenagem > Ajustes > Sair do programa)
+
+COMO GERAR O INSTALADOR
+- Dê dois cliques em criar_instalador.bat. Ele compila o programa (com o .NET incluso, pré-compilado
+  para abrir rápido) e monta instalador\DockIsland-Setup.exe com o Inno Setup (se não tiver, tenta
+  instalar pelo winget). O instalador pede permissão de administrador (como os instaladores comuns) e deixa você escolher a pasta
+  (padrão: C:\Program Files\DockIsland),
+  cria o atalho no menu Iniciar, oferece iniciar com o Windows e atualiza por cima de uma versão antiga
+  (fecha o programa antes, devolvendo a barra de tarefas). Desinstalar: Configurações > Aplicativos.
+- Para fechar o programa por linha de comando: DockIsland.exe --quit
+
+USO
+- Alt+Tab e Win+Tab: seletor de janelas no estilo da ilha. Alt+Tab: faixa com miniaturas; Tab/Shift+Tab/setas trocam, soltar o Alt abre a janela. Win+Tab: grade com todas as janelas; clique ou setas+Enter abre, X fecha a janela, Esc sai. (Areas de trabalho: chips no topo para trocar, "Nova area de trabalho" e "Fechar esta".)
+- Dock: com a area de trabalho livre (nenhuma janela aberta na tela) o dock fica sempre visivel; ao abrir uma janela ele volta a ocultar sozinho e aparece ao encostar na borda inferior.
+- Passe o mouse na pílula do topo da tela: ela expande.
+- Abas: Música | Clipboard (textos e prints) | Notas | Arquivos | Sistema | Notificações
+- Música: no topo o app que está tocando (ícone + nome, ex.: Spotify); abaixo
+  capa, título e artista; depois tempo atual, barra
+  (clique para avançar/voltar) e tempo total; por fim anterior / pausar / próxima.
+- Clipboard: clique em um item para copiar de novo (textos e capturas de tela).
+  O histórico guarda os últimos 10 itens e continua ali depois de fechar o programa
+  (%AppData%\DockIsland\clipboard.json e a pasta clips\ para as imagens). "Limpar" apaga também do disco.
+- Notas: anotações rápidas. Digite e tecle Enter para guardar (Shift+Enter quebra a linha). Em cada nota:
+  copiar, editar e apagar. O que você está digitando também fica guardado. Tudo é salvo em
+  %AppData%\DockIsland\notes.json, então continua ali depois de fechar e abrir o programa.
+- Arquivos: arraste arquivos ou pastas (do Explorador, área de trabalho...) até a ilha; ela abre
+  sozinha na aba Arquivos, é só soltar. Os itens ficam guardados ali (inclusive depois de fechar o
+  programa) até você arrastá-los para uma pasta: ao soltar na pasta de destino, o item sai da lista.
+  Arraste o título "Arquivos (n)" para levar todos de uma vez. Duplo clique abre o item; o X remove
+  da lista sem mexer no arquivo; "Limpar" esvazia a lista. Funciona como o Explorador: arrastar
+  normalmente move/copia conforme o destino (Ctrl = copiar, Shift = mover). A lista fica em
+  %AppData%\DockIsland\shelf.json.
+- Notificações: agrupadas por aplicativo (um cartão por app, com o MESMO ícone do lançador de apps — inclusive ícones personalizados —, nome, quantidade e
+  "Limpar" só daquele app). A aba é mais larga; a ilha cresce até um limite e depois a lista rola
+  com a roda do mouse. "Limpar" no topo apaga tudo.
+- Selo de notificações: o ícone do app no dock e no lançador ganha um selo vermelho no canto superior
+  direito com a quantidade de notificações dele que estão na aba Notificações (99+ no máximo). O selo
+  acompanha a lista: "Limpar" (do app ou geral) tira o selo, e abrir o app pelo dock ou pelo lançador
+  também limpa as notificações dele. Notificações de música não contam. O app é reconhecido pelo
+  identificador do Windows (AppUserModelID), pelo caminho do programa ou pelo nome (NotifBadges.cs).
+- Sistema (a ilha fica mais larga e alta nessa aba):
+    Calendário do mês (< > troca o mês; clique no título volta para hoje)
+    Wi-Fi/Ethernet (nome da rede, sinal, status)
+    Bluetooth (ligado/desligado e dispositivos conectados)
+    Volume (clique no ícone = mudo, arraste a barra ou use a roda do mouse)
+    Teclado (idioma atual, ex.: POR)
+    Bandeja: ícones dos programas abertos na bandeja do sistema (visíveis e
+    ocultos). Passe o mouse para ver o nome; clique para abrir um menu: Abrir, Mais opções do ícone (menu original do programa) e Fechar programa.
+  Clicar em Wi-Fi, Bluetooth ou Teclado abre os Ajustes do Windows.
+  Esvaziar lixeira: botão ao lado da bandeja, mostra quantos itens e o tamanho; ao clicar, a ilha
+  pede confirmação (Cancelar / Esvaziar) e apaga tudo de vez.
+  Temperaturas (faixa embaixo, na aba Sistema): CPU, GPU, Memória e Placa-mãe, em °C (laranja = quente, vermelho = muito quente).
+    GPU: lida direto pelo programa (NVIDIA / AMD / Intel), sem nada extra.
+    CPU, memória e placa-mãe: o Windows não informa essas temperaturas; elas vêm da biblioteca LibreHardwareMonitorLib,
+    que precisa do driver PawnIO e de permissão de administrador. Para não rodar a ilha inteira como administrador
+    (isso quebra arrastar-e-soltar do Explorador), um auxiliar pequeno e sem janela (DockIsland.exe --sensors) faz a leitura
+    e grava %AppData%\DockIsland\temps.json a cada 2 s. Para ativar: clique num "—" de CPU/Memória/Placa, ou Ajustes > Ilha >
+    "Temperaturas de CPU, placa e memória". A permissão de administrador é pedida UMA vez: o auxiliar instala o PawnIO se faltar
+    (winget install namazso.PawnIO; ou baixe em pawnio.eu), registra a tarefa agendada "DockIslandSensors" (ao entrar no Windows,
+    com privilégios altos, sem pedir de novo) e a ilha passa a iniciá-lo sozinha. Desligar o interruptor remove a tarefa e fecha o
+    auxiliar. O auxiliar também fecha sozinho cerca de 30 s depois que a ilha fecha.
+    Um item que o seu PC não informa continua como "—": a memória só tem sensor em alguns módulos (principalmente DDR5) e a
+    placa-mãe depende do chip Super I/O ser reconhecido pela biblioteca.
+- Pendrive na pílula: ao conectar um pendrive, a pílula alarga e mostra o nome dele (rótulo do volume), a letra da
+  unidade, o espaço livre e o botão de ejetar. Fica ~8 s (segura enquanto o mouse está em cima). Clique no botão: a ilha
+  descarrega o cache, desmonta e mostra "Ejetado com segurança". Se algum programa estiver usando o pendrive, mostra
+  "Em uso" e dá para tentar de novo. Passar o mouse na pílula não expande a ilha enquanto o aviso está na tela
+  (clique no corpo da pílula para expandir). Só unidades "removíveis" do Windows (HD externo costuma contar como fixo).
+- Bluetooth na pílula: ao conectar um dispositivo Bluetooth, a pílula mostra o nome dele (mesma faixa do pendrive)
+  e um botão de engrenagem que abre os Ajustes de Bluetooth do Windows (o Windows não deixa programas comuns
+  desconectarem dispositivos). Fica ~6 s. Só aparecem dispositivos que conectam depois de abrir o programa.
+- Progresso na pílula: ao copiar/mover/excluir arquivos no Explorador, a pílula mostra a barra e a
+  porcentagem reais (lidas da janela de progresso do Windows). Ao baixar um arquivo no navegador, mostra
+  o nome, o tamanho e a velocidade (os navegadores não informam o tamanho total, então a barra fica
+  correndo, sem porcentagem). Ao terminar, aparece "Concluído" por um instante. Download é detectado
+  na pasta Downloads (.crdownload, .part...). Com a ilha aberta, a pílula de progresso some.
+- Desligar e reiniciar o Windows: botões à esquerda das abas (ícone de energia e de seta
+  circular). Ao clicar, a própria ilha pergunta se você realmente quer desligar/reiniciar (Cancelar / Desligar). Tirar o mouse da ilha cancela.
+- Busca (lupa, ao lado da engrenagem): digite para procurar aplicativos, pastas e arquivos do Windows.
+  Apps vêm da lista do lançador; pastas e arquivos vêm do índice do Windows Search (se ele estiver
+  desligado ou achar pouco, a ilha varre Desktop, Documentos, Downloads, Imagens, Vídeos, Música e os
+  discos). Setas escolhem, Enter abre, Ctrl+Enter (ou clique direito, ou o botão de pasta) mostra o
+  item na pasta, Esc fecha. Enquanto a busca está aberta a ilha aceita digitação; ao sair, o foco volta
+  para o programa em que você estava.
+- Atalhos de teclado (WinKeyHook.cs):
+    Tecla Windows (apertar e soltar, sozinha) -> abre/fecha o lançador de aplicativos, no lugar do
+    menu Iniciar do Windows.
+    Win + S -> abre a ilha já na aba Busca, com o cursor no campo (de novo: fecha). A busca do
+    Windows não abre.
+    Os demais atalhos com Win (Win+E, Win+D, Win+L, Win+Shift+S...) continuam normais.
+- Sempre por cima: a ilha, o dock e o lançador ficam na frente de todas as janelas (inclusive as
+  maximizadas e as "sempre na frente" de outros programas). Só saem da frente quando um programa está
+  em tela cheia de verdade (jogo, vídeo, F11); janela apenas maximizada não conta (TopmostGuard.cs).
+  A conferência é imediata quando outra janela vai para a frente. Se o Windows esconder ou minimizar a ilha/o dock
+  (Win+D, Win+M...) eles voltam sozinhos, e se a resolução ou o monitor principal mudar eles são recentralizados.
+- Engrenagem (canto inferior direito) > Ajustes (inclui "Sair do programa"):
+  iniciar com o Windows, segundos na pílula, expandir ao passar o mouse
+  (ou ao clicar), mostrar faixa na pílula ao trocar de música / mostrar a notificação na pílula ao chegar, e Sair.
+  Os ajustes ficam salvos em %AppData%\DockIsland\settings.json.
+- Notificação nova (toast): a pílula alarga para os lados mostrando o ícone do app, o título e o texto por ~4,5 s,
+  igual à troca de faixa, sem expandir a ilha. O ajuste "Notificações na pílula" liga/desliga. A notificação
+  continua indo para a aba Notificações.
+- Ao trocar de faixa, só a pílula alarga para os lados (até onde vai o texto) mostrando capa, título e
+  artista por ~3,5 s (a ilha não expande). Dá para desligar nos Ajustes.
+- Volume: ao mudar o volume (teclas de volume, bandeja, outros apps), a pílula mostra
+  um ícone, a barra e o valor por ~1,5 s. As teclas de volume (mudo, +, -) são tratadas
+  pela ilha em passos de 2%, e por isso o popup de volume do Windows não aparece mais.
+- Sem player de música aberto, a pílula encolhe e fica só do tamanho da data + hora.
+- A pílula mostra a hora e a data de hoje (ex.: quinta, 5 de nov), à esquerda da hora.
+- Os balões (toast) do Windows ficam ocultos enquanto a ilha está aberta: a notificação aparece
+  só na pílula e na aba Notificações. Ao sair da ilha, os balões voltam ao normal. (Usa a opção
+  "Mostrar banners de notificação" de cada app. Só o 1º aviso de um app nunca visto antes pode
+  aparecer no Windows.)
+- Notificações de música (Spotify etc.) entram na lista sem expandir a ilha e
+  sem acender a bolinha; só a da faixa atual é mantida (a anterior é trocada).
+- Enviar notificação própria (ex.: de scripts):
+    DockIsland.exe --notify "Título" "Mensagem" "Spotify"
+  (o 3º texto é opcional: nome do programa, ex. chrome, Spotify, ou o
+   caminho de um .exe; o ícone dele aparece na notificação)
+
+DOCK (embaixo da tela)
+- Pílula preta como a ilha, centralizada embaixo. Oculta, mostra uma barrinha
+  indicadora; aparece ao encostar o mouse na borda inferior da tela ou na própria barrinha.
+- Apps fixados + programas abertos: os abertos ficam sem marcação (o dock não mostra indicador);
+  os que não estão fixados aparecem depois de uma divisória. Clique: abre o app; se a
+  janela já está aberta e na frente, MINIMIZA; se está atrás de outras ou minimizada, traz para frente.
+  O nome do app aparece numa pílula exatamente centralizada acima do ícone. Ao passar o mouse, o ícone
+  ganha só um brilho suave (sem zoom).
+- Menus de clique direito fecham ao clicar fora deles (ou com Esc).
+- Clique direito num ícone: Mostrar janela/Abrir, Fixar no dock/Remover do dock,
+  Fechar janela.
+- Vários janelas do mesmo app: o ícone ganha um pequeno contador no canto (ex.: 2) e o clique direito
+  no ícone lista no topo do menu as janelas abertas (pelo título); clique numa delas para ir até ela.
+- Tamanho do dock: Ajustes (engrenagem) -> aba "Dock" -> "Tamanho do dock", ou clique direito no dock.
+- Divisores (todos removíveis com clique direito no divisor; para trazer de volta use o clique direito no dock): clique direito num app fixado -> "Adicionar divisor depois", ou no dock ->
+  "Adicionar divisor" (no fim). Clique direito no divisor -> "Remover divisor".
+- Ícones: clique direito em QUALQUER ícone (fixado, aberto ou no lançador) -> "Alterar ícone…"
+  (png, ico, jpg, bmp, gif ou .exe/.dll) e "Restaurar ícone padrão". O ícone fica salvo por
+  aplicativo e vale no dock e no lançador. Arquivos em %AppData%\DockIsland\icons e
+  lista em icons.json.
+- Para fixar: arraste um .exe ou atalho para o dock, clique direito no dock ->
+  "Adicionar aplicativo…", ou use o clique direito no ícone de um app aberto.
+- Botão de grade (sempre à esquerda; clique direito: Alterar ícone, Restaurar ícone padrão,
+  Remover/Mostrar divisor): lançador no CENTRO DA TELA com todos os aplicativos
+  instalados (programas e apps da Loja), busca por nome, Enter abre o primeiro,
+  Esc fecha; clique direito num app -> Fixar no dock.
+- Lançador grande (1040 x 760, reduz sozinho em telas pequenas) organizado em BLOCOS DE CATEGORIAS:
+    "Nova categoria" (canto superior direito) -> você digita o nome (ex.: Jogos, Pastas,
+    Trabalho, Apps) e aparece um bloco com esse nome. Dentro de cada bloco os apps ficam
+    em grade. Os apps sem categoria ficam no último bloco, "Sem categoria". Categorias
+    vazias também aparecem, esperando apps.
+    Para colocar um app numa categoria: clique direito no app -> "Mover para “Jogos”",
+    "Remover de “Jogos”" ou "Nova categoria com este app…".
+    No título do bloco, o botão ⋯ (ou clique direito no título) -> Renomear… ou Excluir
+    categoria (os apps não são apagados, só voltam para "Sem categoria").
+    A busca mostra só os blocos que têm resultado.
+    Adicionar app ao lançador: botão "Adicionar app" (ao lado de "Nova categoria") -> escolha
+    um .exe, atalho (.lnk), .bat, .cmd ou .url (dá para marcar vários). Útil para programas
+    portáteis que não aparecem no menu Iniciar. Eles entram em "Sem categoria" (mova com o
+    clique direito) e a lista fica em %AppData%\DockIsland\launcher-apps.json.
+    Um app adicionado à mão e removido some de vez (dá para adicionar de novo).
+    Remover app do lançador: clique direito no app -> "Remover do lançador" (ele continua
+    instalado, só deixa de aparecer na lista). No fim da lista aparece "Restaurar N apps
+    removidos" para trazer todos de volta. A lista de removidos fica em categories.json.
+    Tudo fica salvo em %AppData%\DockIsland\categories.json.
+- Ajustes tem duas seções (Ilha e Dock). Na seção Dock: "Dock de aplicativos" liga/desliga o dock,
+  "Tamanho do dock" (P, M, G, GG); "Ocultar a barra de tarefas
+  do Windows" esconde a barra de vez (ela não aparece nem ao encostar na borda) e
+  a devolve ao sair do programa. Se o programa fechar de forma inesperada e a barra
+  não voltar, abra o programa de novo e saia por "Sair", ou reinicie o Explorer.
+- Os fixados ficam em %AppData%\DockIsland\dock.json.
+
+ARRASTAR E SOLTAR (organizar apps)
+- No LANÇADOR: arraste um app com o mouse.
+    * Solte sobre outro app: ele assume o lugar dele (e entra na categoria desse app).
+    * Solte num bloco/categoria (em área vazia): vai para o fim daquela categoria.
+    * Solte no bloco "Sem categoria": tira o app da categoria. Com categorias criadas, esse bloco
+      fica sempre visível (mesmo vazio) justamente para isso.
+    * A lista rola sozinha quando você chega perto do topo ou do fim do lançador.
+    * A ordem escolhida fica salva em %AppData%\DockIsland\categories.json ("Order").
+      Apps sem ordem definida continuam em ordem alfabética, depois dos ordenados.
+- Do LANÇADOR para o DOCK: arraste o app até o dock (encoste o mouse na borda inferior para ele
+  aparecer) e solte na posição desejada. Uma linha branca mostra onde ele vai entrar.
+- No DOCK: arraste um ícone fixado (ou um divisor) para mudar de lugar. Arraste um programa aberto que
+  não está fixado para fixá-lo exatamente onde soltar. Arrastar um .exe/atalho do Windows também fixa
+  na posição solta.
+- Um clique simples continua abrindo o app: o arrasto só começa depois de mover o mouse alguns pixels.
+- Esc durante o arrasto cancela.
+
+ABRIR LOCAL DO APP
+- Clique direito em um app (no lançador, ou num ícone do dock fixado/aberto) -> "Abrir local do app":
+  abre o Explorador de Arquivos com o programa selecionado. Atalhos (.lnk) abrem o local do programa
+  de verdade; apps da Loja abrem a pasta de instalação do pacote; programas do menu Iniciar sem caminho
+  direto são procurados pelo nome nos atalhos do menu Iniciar. Apps da Loja que estão abertos mas não
+  fixados não mostram a opção (o Windows não informa o caminho deles).
+
+VIDRO FOSCO (transparência + blur)
+- Ilha, dock (pílula, barrinha e nome do app), lançador, janela de confirmação, menus de clique direito e
+  dicas (tooltips) têm fundo translúcido com blur do que está atrás, como vidro fosco.
+- Como funciona (Glass.cs): a cada ~2,5 s a ilha e o dock saem da captura de tela por ~60 ms (o lançador, os menus e a confirmação só tiram a foto ao abrir), o programa tira uma foto
+  da área embaixo dela, borra e usa como fundo, junto com uma película preta translúcida. A foto acompanha a
+  animação da ilha e do dock. O lançador tira a foto antes de aparecer (abre sem piscar). Requer Windows 10 2004
+  (19041) ou mais novo; em versões antigas fica só a transparência, sem o blur.
+- Ferramentas de captura (PrintScreen, Win+Shift+S, Ferramenta de Captura, OBS...): enquanto uma estiver em uso, o
+  programa não tira nenhuma janela da captura, então a ilha, o dock e o lançador aparecem nos prints.
+- Ajustar:
+    Transparência: o 1º par de dígitos da cor do Background no XAML (alfa). Ex.: #99000000 = 60% de preto;
+    use #66000000 para mais transparente ou #CC000000 para mais escuro.
+    Força do blur e frequência: constantes no início de Glass.cs (BaseDown, Passes, Radius, RefreshMs).
+    Desligar o blur em um item: tire local:Glass.Blur="True" dele (fica só a transparência).
+
+POPUP DE SELEÇÃO (copiar / recortar / colar...)
+- Ao selecionar texto em qualquer programa (arrastando o mouse, duplo/triplo clique, Shift+clique, Shift+setas,
+  Ctrl+A), aparece uma barrinha de vidro ao lado do texto: Recortar, Copiar e Colar (nos campos editáveis; em
+  texto só de leitura aparece só Copiar) + Pesquisar na web. Se o texto for um link, vira "Abrir"; se for uma
+  conta (ex.: 12*3+4), mostra "= resultado" e copia o resultado ao clicar.
+- Some ao clicar fora, digitar, rolar, trocar de janela ou depois de ~12 s. Nunca rouba o foco: os botões mandam
+  Ctrl+X / Ctrl+C / Ctrl+V para o programa onde o texto está, então a seleção não se perde.
+- Como lê a seleção (SelectionPopup.cs): pelo UI Automation do Windows (TextPattern), sem tocar na área de
+  transferência. Campos de senha nunca são lidos.
+- Ajustes > Ilha: "Popup ao selecionar texto" liga/desliga (desligado = nenhum gancho de mouse/teclado instalado).
+  "Modo compatível" (desligado por padrão): para programas que não informam a seleção ao Windows, faz um Ctrl+C
+  rápido, lê o texto e devolve a área de transferência como estava (só quando ela tinha texto ou estava vazia;
+  nunca em terminais, Explorer ou área de trabalho). A cópia de teste não entra no histórico da ilha.
+- Limitações: programas rodando como administrador não recebem os botões (o Windows bloqueia); jogos e apps
+  que desenham o próprio texto sem acessibilidade só funcionam no modo compatível.
+- Aparência: mesmos Background/Glass dos outros itens (SelectionWindow.xaml); ações em SelectionPopup.cs (Present).
+
+CLIQUE LONGO (menu na posição do mouse)
+- Segurando o botão esquerdo parado por 0,3 s (HoldMs em SelectionPopup.cs), o mesmo menu aparece no cursor:
+  com texto selecionado = menu completo; sem seleção = Colar (campos editáveis) e Selecionar tudo.
+- Arrastar (mais de ~6 px) cancela; vale junto com o botão "Popup ao selecionar texto" dos Ajustes.
+
+WIN + TAB (fundo desfocado)
+- Na visão geral (Win+Tab) o wallpaper/área de trabalho atrás das janelas fica bem desfocado (SwitcherWindow.cs, ShowUi).
+  Intensidade: HeavyDown e HeavyRadius no início de Glass.cs (maiores = mais desfoque). Escurecimento: VeilGlass
+  em SwitcherWindow.cs (#7A000000 = ~48% de preto; use #5A000000 para mais claro ou #99000000 para mais escuro).

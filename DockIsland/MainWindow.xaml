@@ -1,0 +1,1402 @@
+<Window x:Class="DockIsland.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DockIsland"
+        Title="DockIsland" Width="780" Height="620"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        ShowActivated="False" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI"
+        TextOptions.TextFormattingMode="Ideal">
+
+    <Window.Resources>
+        <!-- Ícones vetoriais (estilo SF Symbols) -->
+        <Geometry x:Key="PlayGeo">M7,4 L20,12 L7,20 Z</Geometry>
+        <Geometry x:Key="PauseGeo">M6,4 L10,4 L10,20 L6,20 Z M14,4 L18,4 L18,20 L14,20 Z</Geometry>
+        <Geometry x:Key="NextGeo">M2,5 L11,12 L2,19 Z M12,5 L21,12 L12,19 Z</Geometry>
+        <Geometry x:Key="PrevGeo">M22,5 L13,12 L22,19 Z M12,5 L3,12 L12,19 Z</Geometry>
+
+        <!-- Botão de controle (sem fundo, com brilho no hover e "afundar" ao clicar) -->
+        <Style x:Key="IconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="24" Background="{TemplateBinding Background}"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_1F}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_33}"/>
+                                <Setter TargetName="bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.86" ScaleY="0.86"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Aba (segmented control do iOS) -->
+        <Style x:Key="TabBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource W_A0}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="9" Padding="10,3" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Link de texto pequeno (Limpar) -->
+        <Style x:Key="LinkBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <TextBlock x:Name="t" Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="t" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Item da lista de clipboard -->
+        <Style x:Key="ClipItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <EventSetter Event="MouseLeftButtonUp" Handler="ClipItem_Click"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" CornerRadius="12" Padding="8" Margin="0,0,0,10" Background="{DynamicResource W_24}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_33}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Item da lista de notas -->
+        <Style x:Key="NoteItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" CornerRadius="12" Padding="10,8,6,8" Margin="0,0,0,8" Background="{DynamicResource W_24}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_33}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Item da lista de arquivos -->
+        <Style x:Key="ShelfItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ShelfItem_PreviewDown"/>
+            <EventSetter Event="PreviewMouseMove" Handler="ShelfItem_PreviewMove"/>
+            <EventSetter Event="PreviewMouseLeftButtonUp" Handler="ShelfItem_Up"/>
+            <EventSetter Event="MouseDoubleClick" Handler="ShelfItem_DoubleClick"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" CornerRadius="12" Padding="8" Margin="0,0,0,8" Background="{DynamicResource W_24}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_33}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Item da lista de resultados da busca -->
+        <Style x:Key="SearchItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <EventSetter Event="MouseLeftButtonUp" Handler="SearchItem_Click"/>
+            <EventSetter Event="MouseRightButtonUp" Handler="SearchItem_RightClick"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="bd" CornerRadius="10" Padding="7,5" Margin="0,0,0,4" Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_26}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_38}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Cartão clicável da aba Sistema -->
+        <Style x:Key="TileBtn" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{DynamicResource W_24}" CornerRadius="14" Padding="12">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_33}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_40}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Cartão baixo (faixa de 46 px da aba Sistema) -->
+        <Style x:Key="TileBtnSlim" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{DynamicResource W_24}" CornerRadius="14" Padding="14,0">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_33}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource W_40}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Switch estilo iOS -->
+        <Style x:Key="Switch" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="track" Width="40" Height="22" CornerRadius="11" Background="#39393D">
+                            <Ellipse x:Name="thumb" Width="18" Height="18" Fill="White"
+                                     HorizontalAlignment="Left" Margin="2,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="track" Property="Background" Value="#30D158"/>
+                                <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ajustes: título de seção, cartão agrupado e rótulo -->
+        <Style x:Key="SetHeader" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource W_80}"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="4,0,0,5"/>
+        </Style>
+        <Style x:Key="SetCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource W_18}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource W_14}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12,0"/>
+        </Style>
+        <Style x:Key="SetLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource FgBrush}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Margin" Value="0,0,48,0"/>
+        </Style>
+
+        <Style x:Key="SetDangerBtn" TargetType="Button">
+            <Setter Property="Foreground" Value="#FF453A"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Height="32" CornerRadius="12" Background="#1AFF453A"
+                                BorderBrush="#26FF453A" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#2EFF453A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- A ilha -->
+    <Border x:Name="Island" Background="#66000000" local:Glass.Blur="True" BorderBrush="{DynamicResource W_2E}" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Top"
+            Margin="0,5,0,0" Width="330" Height="38" CornerRadius="19" ClipToBounds="True"
+            AllowDrop="True" DragEnter="Island_DragEnter" DragOver="Island_DragOver" DragLeave="Island_DragLeave" Drop="Island_Drop"
+            MouseEnter="Island_MouseEnter" MouseLeave="Island_MouseLeave" MouseLeftButtonUp="Island_Click"
+            PreviewMouseWheel="Island_PreviewMouseWheel">
+
+        <Grid>
+            <!-- ============ ESTADO COMPACTO ============ -->
+            <Grid x:Name="CollapsedView" Margin="16,0" IsHitTestVisible="False">
+                <!-- Hora e data juntas, à esquerda: [relógio] 11:23 | [calendário] Sáb, 7 de nov -->
+                <StackPanel x:Name="MiniLeft" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE121;" Foreground="{DynamicResource FgBrush}" FontSize="16"
+                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock x:Name="MiniTime" Text="00:00" Foreground="{DynamicResource FgBrush}" FontSize="14.5" FontWeight="Normal"
+                               TextAlignment="Center"
+                               VerticalAlignment="Center"/>
+                    <Rectangle Width="1" Height="20" Fill="{DynamicResource W_40}" VerticalAlignment="Center" Margin="12,0,12,0"/>
+                    <TextBlock Text="&#xE787;" Foreground="{DynamicResource FgBrush}" FontSize="16"
+                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                    <TextBlock x:Name="MiniDate" Foreground="{DynamicResource FgBrush}" FontSize="14.5" FontWeight="Normal"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel x:Name="MiniRight" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <!-- Divisor da música: só aparece com o app de música aberto -->
+                    <Rectangle x:Name="MiniSep" Width="1" Height="20" Fill="{DynamicResource W_40}" VerticalAlignment="Center"
+                               Margin="12,0,0,0" Visibility="Collapsed"/>
+                    <!-- Equalizador animado -->
+                    <StackPanel x:Name="Eq" Orientation="Horizontal" VerticalAlignment="Center" Margin="11,0,0,0" Visibility="Collapsed">
+                        <Border x:Name="EqBar0" Width="3" Height="14" CornerRadius="1.5" Background="{DynamicResource FgBrush}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Border.RenderTransform><ScaleTransform ScaleY="0.3"/></Border.RenderTransform>
+                        </Border>
+                        <Border x:Name="EqBar1" Width="3" Height="14" CornerRadius="1.5" Background="{DynamicResource FgBrush}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Border.RenderTransform><ScaleTransform ScaleY="0.3"/></Border.RenderTransform>
+                        </Border>
+                        <Border x:Name="EqBar2" Width="3" Height="14" CornerRadius="1.5" Background="{DynamicResource FgBrush}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Border.RenderTransform><ScaleTransform ScaleY="0.3"/></Border.RenderTransform>
+                        </Border>
+                        <Border x:Name="EqBar3" Width="3" Height="14" CornerRadius="1.5" Background="{DynamicResource FgBrush}" Margin="1,0" RenderTransformOrigin="0.5,1">
+                            <Border.RenderTransform><ScaleTransform ScaleY="0.3"/></Border.RenderTransform>
+                        </Border>
+                    </StackPanel>
+                    <Border x:Name="MiniArt" Width="22" Height="22" CornerRadius="6" Margin="12,0,0,0"
+                            Visibility="Collapsed">
+                        <Border.Background>
+                            <ImageBrush x:Name="MiniArtBrush" Stretch="UniformToFill"/>
+                        </Border.Background>
+                    </Border>
+                    <!-- Sino de notificação: divisor + sino, só aparece quando há notificação não lida -->
+                    <StackPanel x:Name="Badge" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                        <Rectangle Width="1" Height="20" Fill="{DynamicResource W_40}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <Grid VerticalAlignment="Center" Margin="12,0,0,0">
+                        <!-- Sino desenhado em vetor (não depende de fonte de ícones) -->
+                        <Viewbox Width="16" Height="16" VerticalAlignment="Center">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="M6,8 A6,6 0 0 1 18,8 C18,15 21,17 21,17 L3,17 C3,17 6,15 6,8 Z"
+                                      Stroke="{DynamicResource FgBrush}" StrokeThickness="2" StrokeLineJoin="Round"/>
+                                <Path Data="M10.3,21 A1.94,1.94 0 0 0 13.7,21"
+                                      Stroke="{DynamicResource FgBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            </Canvas>
+                        </Viewbox>
+                            <!-- Bolinha com o número de notificações novas -->
+                            <Border x:Name="BadgeDot" MinWidth="14" Height="14" CornerRadius="7" Background="#FF453A"
+                                    Padding="3,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-8,0">
+                                <TextBlock x:Name="BadgeCount" Text="1" Foreground="{DynamicResource FgBrush}" FontSize="9.5" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ FAIXA NOVA NA PÍLULA (cresce só para os lados) ============ -->
+            <Grid x:Name="TrackPeekView" Margin="9,0,14,0" Opacity="0" IsHitTestVisible="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border x:Name="PeekIconBox" Width="26" Height="26" CornerRadius="7" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"
+                        Background="#1C1C1E">
+                    <Grid>
+                        <TextBlock x:Name="PeekGlyph" Text="♫" Foreground="{DynamicResource W_40}" FontSize="13" FontFamily="Segoe UI Symbol"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border CornerRadius="7">
+                            <Border.Background>
+                                <ImageBrush x:Name="PeekArtBrush" Stretch="UniformToFill"/>
+                            </Border.Background>
+                        </Border>
+                    </Grid>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock x:Name="PeekTitle" Foreground="{DynamicResource FgBrush}" FontSize="12.5" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="PeekArtist" Foreground="{DynamicResource W_A0}" FontSize="10.5"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ VOLUME NA PÍLULA ============ -->
+            <Grid x:Name="VolPeekView" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Opacity="0" IsHitTestVisible="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="VolPeekIcon" Text="&#xE767;" Foreground="{DynamicResource FgBrush}" FontSize="15" Width="20"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                <Grid Grid.Column="1" Width="130" Height="6" Margin="12,0,12,0" VerticalAlignment="Center">
+                    <Border CornerRadius="3" Background="{DynamicResource W_40}"/>
+                    <Border x:Name="VolPeekFill" CornerRadius="3" Background="{DynamicResource FgBrush}"
+                            HorizontalAlignment="Left" Width="0"/>
+                </Grid>
+                <TextBlock x:Name="VolPeekText" Grid.Column="2" Text="0" Foreground="{DynamicResource FgBrush}" FontSize="13"
+                           FontWeight="SemiBold" Width="26" TextAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- ============ PROGRESSO DE CÓPIA / DOWNLOAD NA PÍLULA ============ -->
+            <Grid x:Name="JobPeekView" Margin="16,0" Opacity="0" IsHitTestVisible="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="JobIcon" Text="&#xE8C8;" Foreground="{DynamicResource FgBrush}" FontSize="15" Width="20"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock x:Name="JobLabel" Foreground="{DynamicResource FgBrush}" FontSize="12" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <Grid x:Name="JobTrack" Height="4" Margin="0,4,0,0" ClipToBounds="True">
+                        <Border CornerRadius="2" Background="{DynamicResource W_40}"/>
+                        <Border x:Name="JobFill" CornerRadius="2" Background="{DynamicResource FgBrush}" HorizontalAlignment="Left" Width="0">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="JobFillShift"/>
+                            </Border.RenderTransform>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+                <TextBlock x:Name="JobRight" Grid.Column="2" Foreground="{DynamicResource W_B0}" FontSize="11.5" FontWeight="Medium"
+                           Width="64" TextAlignment="Right" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            </Grid>
+
+            <!-- ============ PENDRIVE NA PÍLULA ============ -->
+            <Grid x:Name="UsbPeekView" Margin="16,0,12,0" Opacity="0" IsHitTestVisible="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="UsbIcon" Text="&#xE88E;" Foreground="{DynamicResource FgBrush}" FontSize="15" Width="20"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock x:Name="UsbName" Foreground="{DynamicResource FgBrush}" FontSize="12.5" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="UsbSub" Foreground="{DynamicResource W_A0}" FontSize="10.5"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <!-- Botão de ejetar (triângulo + barra, desenhado em vetor) -->
+                <Border x:Name="UsbEjectBtn" Grid.Column="2" Width="26" Height="26" CornerRadius="13" Margin="10,0,0,0"
+                        VerticalAlignment="Center" Cursor="Hand" ToolTip="Ejetar"
+                        MouseLeftButtonUp="UsbEject_Click">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource W_26}"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource W_4D}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                    <TextBlock x:Name="UsbSettingsGlyph" Text="&#xE713;" Foreground="{DynamicResource FgBrush}" FontSize="12"
+                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Visibility="Collapsed"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Viewbox x:Name="UsbEjectGlyph" Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M12,3 L22,15 L2,15 Z" Fill="{DynamicResource FgBrush}"/>
+                            <Path Data="M3,18 L21,18 L21,22 L3,22 Z" Fill="{DynamicResource FgBrush}"/>
+                        </Canvas>
+                    </Viewbox>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ============ ESTADO EXPANDIDO ============ -->
+            <Grid x:Name="ExpandedView" Width="500" Height="200" Opacity="0" IsHitTestVisible="False"
+                  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,24,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="28"/>
+                    <RowDefinition Height="26"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="28"/>
+                </Grid.RowDefinitions>
+
+                <!-- PÁGINA: MÚSICA -->
+                <Grid x:Name="PageMusic" Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- App que está tocando (ícone + nome) -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Border x:Name="AppIconBox" Width="18" Height="18" CornerRadius="5" Margin="0,0,8,0"
+                                Visibility="Collapsed" VerticalAlignment="Center">
+                            <TextBlock x:Name="AppInitial" Foreground="{DynamicResource FgBrush}" FontSize="10" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock x:Name="AppNameText" Foreground="{DynamicResource W_B0}" FontSize="12.5" FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Capa + título + artista -->
+                    <Grid Grid.Row="1" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Width="64" Height="64" CornerRadius="16" Background="#1C1C1E" VerticalAlignment="Center">
+                            <Grid>
+                                <TextBlock Text="♫" Foreground="{DynamicResource W_40}" FontSize="28" FontFamily="Segoe UI Symbol"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border CornerRadius="16">
+                                    <Border.Background>
+                                        <ImageBrush x:Name="ArtBrush" Stretch="UniformToFill"/>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                            <TextBlock x:Name="TitleText" Text="Nada tocando" Foreground="{DynamicResource FgBrush}" FontSize="19"
+                                       FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="ArtistText" Text="Abra o Spotify, YouTube, etc." Margin="0,2,0,0"
+                                       Foreground="{DynamicResource W_A0}" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+
+                    </Grid>
+
+                    <!-- Tempo atual | barra | tempo total (clique na barra para avançar/voltar) -->
+                    <Grid Grid.Row="2" Margin="0,12,0,0" Height="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="TimeCur" Text="0:00" Foreground="{DynamicResource W_A0}" FontSize="12" MinWidth="34"
+                                   VerticalAlignment="Center"/>
+                        <Grid x:Name="ProgHit" Grid.Column="1" Background="Transparent" Cursor="Hand" Margin="8,0"
+                              MouseLeftButtonUp="ProgHit_Click">
+                            <Border Height="6" CornerRadius="3" Background="{DynamicResource W_33}" VerticalAlignment="Center"/>
+                            <Border x:Name="ProgFill" Height="6" CornerRadius="3" Background="{DynamicResource FgBrush}"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center" Width="0"/>
+                        </Grid>
+                        <TextBlock x:Name="TimeEnd" Grid.Column="2" Text="0:00" Foreground="{DynamicResource W_A0}" FontSize="12"
+                                   MinWidth="34" TextAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Controles -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <Button Style="{StaticResource IconBtn}" Click="Prev_Click">
+                            <Path Data="{StaticResource PrevGeo}" Fill="{DynamicResource FgBrush}" Stroke="{DynamicResource FgBrush}" StrokeThickness="2"
+                                  StrokeLineJoin="Round" Stretch="Uniform" Width="24" Height="24"/>
+                        </Button>
+                        <Button x:Name="PlayBtn" Style="{StaticResource IconBtn}" Margin="36,0" Click="PlayPause_Click">
+                            <Path x:Name="PlayIcon" Data="{StaticResource PlayGeo}" Fill="{DynamicResource FgBrush}" Stroke="{DynamicResource FgBrush}"
+                                  StrokeThickness="2" StrokeLineJoin="Round" Stretch="Uniform" Width="28" Height="28"/>
+                        </Button>
+                        <Button Style="{StaticResource IconBtn}" Click="Next_Click">
+                            <Path Data="{StaticResource NextGeo}" Fill="{DynamicResource FgBrush}" Stroke="{DynamicResource FgBrush}" StrokeThickness="2"
+                                  StrokeLineJoin="Round" Stretch="Uniform" Width="24" Height="24"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- PÁGINA: NOTIFICAÇÕES -->
+                <Grid x:Name="PagePanel" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Height="22" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Notificações" Foreground="{DynamicResource FgBrush}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="DateText" Foreground="{DynamicResource W_80}" FontSize="12" Margin="10,1,0,0"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="NotifMoreText" Foreground="{DynamicResource W_80}" FontSize="11" Margin="0,0,52,0"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        <Button Content="Limpar" Style="{StaticResource LinkBtn}" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Click="ClearNotifs_Click"/>
+                    </Grid>
+
+                    <TextBlock x:Name="NoNotifText" Grid.Row="1" Text="Sem notificações" Foreground="{DynamicResource W_66}"
+                               FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <ScrollViewer x:Name="NotifScroll" Grid.Row="1" VerticalScrollBarVisibility="Hidden"
+                                  PreviewMouseWheel="NotifScroll_Wheel" ScrollChanged="NotifScroll_Changed">
+                        <ItemsControl x:Name="NotifList" Margin="0,0,0,-10">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Um cartão por aplicativo: cabeçalho (ícone, nome, nº, Limpar) + notificações dele -->
+                                    <Border Background="{DynamicResource W_24}" CornerRadius="14" Margin="0,0,0,10" Padding="14,12">
+                                        <StackPanel>
+                                            <Grid Height="30" Background="Transparent" Cursor="Hand" Tag="{Binding Target}"
+                                                  MouseLeftButtonUp="NotifOpen_Click">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Width="26" Height="26" CornerRadius="7" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality"
+                                                        VerticalAlignment="Center" Background="{Binding IconBrush}">
+                                                    <TextBlock Text="{Binding Initial}" Foreground="{DynamicResource FgBrush}" FontSize="12"
+                                                               FontWeight="Bold" HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding App}" Foreground="{DynamicResource FgBrush}" FontSize="13"
+                                                               FontWeight="SemiBold" MaxWidth="260" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding CountText}" Foreground="{DynamicResource W_80}" FontSize="11"
+                                                               Margin="8,1,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Content="Limpar" Style="{StaticResource LinkBtn}"
+                                                        VerticalAlignment="Center" Tag="{Binding App}" Click="ClearGroup_Click"/>
+                                            </Grid>
+                                            <ItemsControl ItemsSource="{Binding Items}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <!-- Altura fixa (42) -->
+                                                        <Grid Height="42" Margin="36,0,0,0" Background="Transparent" Cursor="Hand"
+                                                              Tag="{Binding Target}" MouseLeftButtonUp="NotifOpen_Click">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="Auto"/>
+                                                            </Grid.RowDefinitions>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Rectangle Grid.ColumnSpan="2" Height="1" Fill="{DynamicResource W_1A}"
+                                                                       VerticalAlignment="Top"/>
+                                                            <TextBlock Text="{Binding Title}" Foreground="{DynamicResource FgBrush}" FontSize="12.5"
+                                                                       FontWeight="SemiBold" Margin="0,6,0,0"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding Time}" Foreground="{DynamicResource W_80}"
+                                                                       FontSize="10.5" Margin="8,8,0,0"/>
+                                                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Body}"
+                                                                       Foreground="{DynamicResource W_CC}" FontSize="11.5"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- PÁGINA: ÁREA DE TRANSFERÊNCIA -->
+                <Grid x:Name="PageClip" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock x:Name="ClipHeader" Text="Área de transferência" Foreground="{DynamicResource FgBrush}"
+                                   FontSize="13" FontWeight="SemiBold"/>
+                        <Button Content="Limpar" Style="{StaticResource LinkBtn}" HorizontalAlignment="Right"
+                                Click="ClearClip_Click"/>
+                    </Grid>
+                    <TextBlock x:Name="NoClipText" Grid.Row="1" Text="Copie um texto ou tire um print"
+                               Foreground="{DynamicResource W_66}" FontSize="12.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ListBox x:Name="ClipList" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ItemContainerStyle="{StaticResource ClipItemStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Miniatura (só para capturas de tela) -->
+                                    <Border x:Name="ThumbBox" Width="60" Height="38" CornerRadius="7" Margin="0,0,10,0"
+                                            Visibility="Collapsed">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="{Binding Thumb}" Stretch="UniformToFill"/>
+                                        </Border.Background>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Preview}" Foreground="{DynamicResource FgBrush}" FontSize="12.5"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="SubText" Text="{Binding Subtitle}" Foreground="{DynamicResource W_80}"
+                                                   FontSize="10.5" Visibility="Collapsed"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="2" Text="{Binding Time}" Foreground="{DynamicResource W_66}" FontSize="10.5"
+                                               VerticalAlignment="Center" Margin="8,0,2,0"/>
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsImage}" Value="True">
+                                        <Setter TargetName="ThumbBox" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="SubText" Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <!-- PÁGINA: NOTAS RÁPIDAS (Enter guarda; ficam salvas ao fechar o programa) -->
+                <Grid x:Name="PageNotes" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border MinHeight="36" CornerRadius="12" Background="{DynamicResource W_26}" Margin="0,0,0,10">
+                        <Grid Margin="12,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid VerticalAlignment="Center" Margin="0,7">
+                                <TextBlock x:Name="NoteHint" Text="Escreva uma nota e tecle Enter…" Foreground="{DynamicResource W_66}"
+                                           FontSize="13" IsHitTestVisible="False" VerticalAlignment="Top"/>
+                                <TextBox x:Name="NoteBox" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource FgBrush}"
+                                         CaretBrush="{DynamicResource FgBrush}" SelectionBrush="{DynamicResource AccentSelBrush}" FontSize="13" Padding="0"
+                                         AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="64"
+                                         VerticalScrollBarVisibility="Hidden"
+                                         TextChanged="NoteBox_TextChanged" PreviewKeyDown="NoteBox_PreviewKeyDown"/>
+                            </Grid>
+                            <Button Grid.Column="1" Style="{StaticResource IconBtn}" Width="26" Height="26"
+                                    VerticalAlignment="Center" Margin="6,0,0,0" Click="NoteAdd_Click"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" Foreground="{DynamicResource W_A0}"
+                                    Content="&#xE710;" ToolTip="Guardar nota (Enter)"/>
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Name="NoNotesText" Grid.Row="1" Text="Nenhuma nota ainda"
+                               Foreground="{DynamicResource W_66}" FontSize="12.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ListBox x:Name="NoteList" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ItemContainerStyle="{StaticResource NoteItemStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Text}" Foreground="{DynamicResource FgBrush}" FontSize="12.5"
+                                                   TextWrapping="Wrap" MaxHeight="52" ToolTip="{Binding Text}"/>
+                                        <TextBlock Text="{Binding Time}" Foreground="{DynamicResource W_66}" FontSize="10.5" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                                        <Button Style="{StaticResource IconBtn}" Width="24" Height="24" Click="NoteCopy_Click"
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
+                                                Foreground="{DynamicResource W_A0}" Content="&#xE8C8;" ToolTip="Copiar"/>
+                                        <Button Style="{StaticResource IconBtn}" Width="24" Height="24" Click="NoteEdit_Click"
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
+                                                Foreground="{DynamicResource W_A0}" Content="&#xE70F;" ToolTip="Editar"/>
+                                        <Button Style="{StaticResource IconBtn}" Width="24" Height="24" Click="NoteDelete_Click"
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
+                                                Foreground="{DynamicResource W_A0}" Content="&#xE74D;" ToolTip="Apagar"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <!-- PÁGINA: ARQUIVOS (arraste para a ilha; arraste para uma pasta para tirar) -->
+                <Grid x:Name="PageShelf" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock x:Name="ShelfHeader" Text="Arquivos" Foreground="{DynamicResource FgBrush}"
+                                   FontSize="13" FontWeight="SemiBold" Background="Transparent" HorizontalAlignment="Left"
+                                   MouseMove="ShelfHeader_MouseMove"
+                                   ToolTip="Arraste este título para levar todos os itens de uma vez"/>
+                        <Button Content="Limpar" Style="{StaticResource LinkBtn}" HorizontalAlignment="Right"
+                                Click="ClearShelf_Click"/>
+                    </Grid>
+                    <TextBlock x:Name="NoShelfText" Grid.Row="1" Text="Arraste arquivos ou pastas para cá"
+                               Foreground="{DynamicResource W_66}" FontSize="12.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ListBox x:Name="ShelfList" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ItemContainerStyle="{StaticResource ShelfItemStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Image Source="{Binding Icon}" Width="28" Height="28" Margin="0,0,10,0"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource FgBrush}" FontSize="12.5"
+                                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}"/>
+                                        <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource W_80}" FontSize="10.5"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource IconBtn}" Width="24" Height="24"
+                                            Click="ShelfRemove_Click" Margin="6,0,0,0"
+                                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"
+                                            Foreground="{DynamicResource W_80}" Content="&#xE711;" ToolTip="Remover da lista"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <!-- PÁGINA: SISTEMA (calendário, rede, bluetooth, volume, unidades) -->
+                <Grid x:Name="PageSystem" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="46"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Relógio + Calendário (coluna da esquerda) -->
+                    <Grid Margin="0,0,10,0">
+                    <!-- mesmas linhas da coluna de cartões: a hora fica do tamanho dos cartões de rede/Bluetooth -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="52"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Widget de hora -->
+                    <Border Background="{DynamicResource W_24}" CornerRadius="16" Padding="12,6">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock x:Name="ClockBig" Foreground="{DynamicResource FgBrush}" FontSize="34" FontWeight="SemiBold"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ClockSec" Foreground="{DynamicResource FgBrush}" FontSize="34" FontWeight="SemiBold"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="ClockDate" Foreground="{DynamicResource W_99}" FontSize="11.5"
+                                       HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Calendário -->
+                    <Border Grid.Row="2" Grid.RowSpan="5" Background="{DynamicResource W_24}" CornerRadius="16" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="28"/>
+                                <RowDefinition Height="20"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Button Style="{StaticResource IconBtn}" Width="28" Height="28" HorizontalAlignment="Left"
+                                        Click="CalPrev_Click" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="12" Foreground="{DynamicResource W_B0}" Content="&#xE76B;"/>
+                                <TextBlock x:Name="CalTitle" Foreground="{DynamicResource FgBrush}" FontSize="14" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand"
+                                           ToolTip="Voltar para hoje" MouseLeftButtonUp="CalTitle_Click"/>
+                                <Button Style="{StaticResource IconBtn}" Width="28" Height="28" HorizontalAlignment="Right"
+                                        Click="CalNext_Click" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="12" Foreground="{DynamicResource W_B0}" Content="&#xE76C;"/>
+                            </Grid>
+                            <UniformGrid x:Name="CalWeek" Grid.Row="1" Columns="7" Rows="1"/>
+                            <UniformGrid x:Name="CalDays" Grid.Row="2" Columns="7" Rows="6"/>
+                        </Grid>
+                    </Border>
+                    </Grid>
+
+                    <!-- Cartões -->
+                    <Grid Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="52"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Rede -->
+                        <Button Grid.Row="0" Grid.Column="0" Style="{StaticResource TileBtn}"
+                                Tag="ms-settings:network" Click="Tile_Click">
+                            <StackPanel>
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="NetIcon" Text="&#xE701;" FontSize="16" Foreground="{DynamicResource AccentBrush}"
+                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="NetLabel" Text="Wi-Fi" Foreground="{DynamicResource W_99}" FontSize="12"
+                                                   Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel x:Name="NetBars" Orientation="Horizontal" HorizontalAlignment="Right"
+                                                VerticalAlignment="Bottom">
+                                        <Border x:Name="NetBar0" Width="4" Height="7" CornerRadius="1.5" Margin="1.5,0,0,0" VerticalAlignment="Bottom" Background="{DynamicResource W_40}"/>
+                                        <Border x:Name="NetBar1" Width="4" Height="11" CornerRadius="1.5" Margin="1.5,0,0,0" VerticalAlignment="Bottom" Background="{DynamicResource W_40}"/>
+                                        <Border x:Name="NetBar2" Width="4" Height="15" CornerRadius="1.5" Margin="1.5,0,0,0" VerticalAlignment="Bottom" Background="{DynamicResource W_40}"/>
+                                        <Border x:Name="NetBar3" Width="4" Height="19" CornerRadius="1.5" Margin="1.5,0,0,0" VerticalAlignment="Bottom" Background="{DynamicResource W_40}"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock x:Name="NetName" Text="—" Foreground="{DynamicResource FgBrush}" FontSize="15" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                <TextBlock x:Name="NetDetail" Text="" Foreground="{DynamicResource W_80}" FontSize="12"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Bluetooth -->
+                        <Button Grid.Row="0" Grid.Column="2" Style="{StaticResource TileBtn}"
+                                Tag="ms-settings:bluetooth" Click="Tile_Click">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="BtIcon" Text="&#xE702;" FontSize="16" Foreground="{DynamicResource W_80}"
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Bluetooth" Foreground="{DynamicResource W_99}" FontSize="12"
+                                               Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock x:Name="BtName" Text="—" Foreground="{DynamicResource FgBrush}" FontSize="15" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                <TextBlock x:Name="BtDetail" Text="" Foreground="{DynamicResource W_80}" FontSize="12"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Volume (clique no ícone = mudo; arraste a barra; role o mouse) -->
+                        <Border x:Name="VolCard" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Background="{DynamicResource W_24}"
+                                CornerRadius="14" Padding="12" MouseWheel="Vol_Wheel">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="VolBtn" Style="{StaticResource IconBtn}" Width="48" Height="48"
+                                        Click="VolMute_Click" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="20" Foreground="{DynamicResource FgBrush}" Content="&#xE767;" ToolTip="Silenciar / ativar som"/>
+                                <Grid x:Name="VolHit" Grid.Column="1" Height="36" Background="Transparent" Cursor="Hand"
+                                      Margin="10,0,10,0" MouseLeftButtonDown="Vol_Down" MouseMove="Vol_Move"
+                                      MouseLeftButtonUp="Vol_Up">
+                                    <Border Height="8" CornerRadius="4" Background="{DynamicResource W_40}" VerticalAlignment="Center"/>
+                                    <Border x:Name="VolFill" Height="8" CornerRadius="4" Background="{DynamicResource FgBrush}"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center" Width="0"/>
+                                    <!-- bolinha: alça para arrastar (acompanha o fim da barra) -->
+                                    <Border x:Name="VolKnob" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource FgBrush}"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center" Cursor="Hand"
+                                            BorderBrush="#33000000" BorderThickness="1">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.35" Color="Black"/>
+                                        </Border.Effect>
+                                    </Border>
+                                </Grid>
+                                <TextBlock x:Name="VolText" Grid.Column="2" Text="0%" Foreground="{DynamicResource FgBrush}" FontSize="15"
+                                           FontWeight="SemiBold" Width="48" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Espaço livre por unidade (mesma largura do card do volume) -->
+                        <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="1.7*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Espaço livre por unidade (clique em uma unidade = abrir) -->
+                            <Border Grid.Column="0" Grid.ColumnSpan="3" Background="{DynamicResource W_24}" CornerRadius="14" Padding="12,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="&#xEDA2;" FontSize="22" Foreground="{DynamicResource AccentBrush}" Margin="0,0,12,0"
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                                    <StackPanel x:Name="DrivesPanel" Grid.Column="1" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+                        <!-- Temperaturas: CPU, GPU, memória e placa-mãe -->
+                        <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Background="{DynamicResource W_24}" CornerRadius="14" Padding="4,0">
+                            <UniformGrid Rows="1" Columns="4">
+                                <Border x:Name="TempCpuBox" Tag="cpu" Background="Transparent" MouseLeftButtonUp="TempCell_Click">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="CPU" Foreground="{DynamicResource W_80}" FontSize="11" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="TempCpu" Text="—" Foreground="{DynamicResource W_80}" FontSize="15" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="TempGpuBox" Tag="gpu" Background="Transparent" MouseLeftButtonUp="TempCell_Click">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="GPU" Foreground="{DynamicResource W_80}" FontSize="11" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="TempGpu" Text="—" Foreground="{DynamicResource W_80}" FontSize="15" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="TempMemBox" Tag="mem" Background="Transparent" MouseLeftButtonUp="TempCell_Click">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="Memória" Foreground="{DynamicResource W_80}" FontSize="11" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="TempMem" Text="—" Foreground="{DynamicResource W_80}" FontSize="15" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="TempBoardBox" Tag="board" Background="Transparent" MouseLeftButtonUp="TempCell_Click">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="Placa-mãe" Foreground="{DynamicResource W_80}" FontSize="11" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="TempBoard" Text="—" Foreground="{DynamicResource W_80}" FontSize="15" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Bandeja do sistema: ícones dos programas abertos (passe o mouse = nome; clique = abrir) -->
+                    <Grid Grid.Row="2" Grid.ColumnSpan="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{DynamicResource W_24}" CornerRadius="14" Padding="12,0" Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Bandeja" Foreground="{DynamicResource W_99}" FontSize="12" Margin="0,0,12,0"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="NoTrayText" Grid.Column="1" Text="Nenhum item aberto" Foreground="{DynamicResource W_66}"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                            <ItemsControl x:Name="TrayList" Grid.Column="1" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="TrayBtn" Width="34" Height="34" CornerRadius="9" Margin="0,0,4,0"
+                                                Cursor="Hand" Background="Transparent" ToolTip="{Binding Name}"
+                                                MouseLeftButtonUp="TrayItem_Click">
+                                            <Grid>
+                                                <Image Source="{Binding Icon}" Width="22" Height="22"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Border Width="22" Height="22" CornerRadius="11" Background="#3A3A3C"
+                                                        Visibility="{Binding FallbackVis}">
+                                                    <TextBlock Text="{Binding Initial}" Foreground="{DynamicResource FgBrush}" FontSize="11"
+                                                               FontWeight="Bold" HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <Trigger SourceName="TrayBtn" Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="TrayBtn" Property="Background" Value="{DynamicResource W_26}"/>
+                                            </Trigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="TrayMoreText" Grid.Column="2" Foreground="{DynamicResource W_80}" FontSize="12"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Ação rápida: esvaziar a lixeira -->
+                    <Button x:Name="TrashBtn" Grid.Column="1" Style="{StaticResource TileBtnSlim}" Click="Trash_Click"
+                            ToolTip="Esvaziar a lixeira">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74D;" FontSize="18" Foreground="#FF453A" Margin="0,0,10,0"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Esvaziar lixeira" Foreground="{DynamicResource FgBrush}" FontSize="12.5" FontWeight="SemiBold"
+                                           TextAlignment="Center"/>
+                                <TextBlock x:Name="TrashInfo" Text="" Foreground="{DynamicResource W_80}" FontSize="10.5"
+                                           TextAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Ação rápida: buscar atualizações do Windows (abre os Ajustes e já inicia a busca) -->
+                    <Button x:Name="UpdateBtn" Grid.Column="2" Style="{StaticResource TileBtnSlim}" Margin="10,0,0,0"
+                            Click="Tile_Click" Tag="ms-settings:windowsupdate-action" ToolTip="Buscar atualizações do Windows">
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Margin="0,0,10,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="UpdateIcon" Text="&#xE895;" FontSize="18" Foreground="{DynamicResource AccentBrush}"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                                <!-- bolinha de aviso: aparece quando há atualização do Windows disponível -->
+                                <Ellipse x:Name="UpdateDot" Visibility="Collapsed" Width="8" Height="8" Fill="#FF9F0A"
+                                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,-3,0"/>
+                            </Grid>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="UpdateTitle" Text="Buscar atualizações" Foreground="{DynamicResource FgBrush}" FontSize="12.5" FontWeight="SemiBold"
+                                           TextAlignment="Center"/>
+                                <TextBlock x:Name="UpdateSub" Text="Windows Update" Foreground="{DynamicResource W_80}" FontSize="10.5"
+                                           TextAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+                    </Grid>
+                </Grid>
+
+                <!-- PÁGINA: BUSCA (apps, pastas e arquivos do Windows) -->
+                <Grid x:Name="PageSearch" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Height="36" CornerRadius="12" Background="{DynamicResource W_26}" Margin="0,0,0,10">
+                        <Grid Margin="12,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                       Foreground="{DynamicResource W_A0}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Grid Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="SearchHint" Text="Buscar apps, pastas e arquivos…" Foreground="{DynamicResource W_66}"
+                                           FontSize="13" IsHitTestVisible="False" VerticalAlignment="Center"/>
+                                <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource FgBrush}"
+                                         CaretBrush="{DynamicResource FgBrush}" SelectionBrush="{DynamicResource AccentSelBrush}" FontSize="13" Padding="0"
+                                         VerticalContentAlignment="Center" VerticalAlignment="Center"
+                                         TextChanged="SearchBox_TextChanged" PreviewKeyDown="SearchBox_PreviewKeyDown"/>
+                            </Grid>
+                            <Button x:Name="SearchClear" Grid.Column="2" Style="{StaticResource IconBtn}" Width="24" Height="24"
+                                    Click="SearchClear_Click" Visibility="Collapsed"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10" Foreground="{DynamicResource W_A0}"
+                                    Content="&#xE711;" ToolTip="Limpar"/>
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Name="SearchStatus" Grid.Row="1" Text="Digite para buscar" Foreground="{DynamicResource W_66}"
+                               FontSize="12.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ListBox x:Name="SearchList" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ItemContainerStyle="{StaticResource SearchItemStyle}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Image Source="{Binding Icon}" Width="26" Height="26" Margin="0,0,10,0"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource FgBrush}" FontSize="12.5"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource W_80}" FontSize="10.5"
+                                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource IconBtn}" Width="24" Height="24"
+                                            Visibility="{Binding LocVis}" Click="SearchLoc_Click" Margin="6,0,0,0"
+                                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
+                                            Foreground="{DynamicResource W_A0}" Content="&#xED25;" ToolTip="Mostrar na pasta"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+
+                <!-- PÁGINA: AJUSTES (três seções: Geral, Ilha e Dock) -->
+                <Grid x:Name="PageSettings" Grid.Row="2" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="Ajustes" Foreground="{DynamicResource FgBrush}" FontSize="13" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{DynamicResource W_26}" CornerRadius="10" Padding="2" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="SetTabGeneral" Content="Geral" Style="{StaticResource TabBtn}"
+                                        Click="SettingsTab_Click" Tag="0"/>
+                                <Button x:Name="SetTabIsland" Content="Ilha" Style="{StaticResource TabBtn}"
+                                        Click="SettingsTab_Click" Tag="1"/>
+                                <Button x:Name="SetTabDock" Content="Dock" Style="{StaticResource TabBtn}"
+                                        Click="SettingsTab_Click" Tag="2"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Seção: Geral (inclui o popup de seleção e o botão de sair, no final) -->
+                    <StackPanel x:Name="SetGeneral" Grid.Row="1">
+                        <TextBlock Text="GERAL" Style="{StaticResource SetHeader}"/>
+                        <Border Style="{StaticResource SetCard}">
+                            <StackPanel>
+                                <Grid Height="32">
+                                    <TextBlock Text="Iniciar com o Windows" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwAuto" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Popup ao selecionar texto (copiar, colar...)" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwSelPopup" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Popup: modo compatível (usa Ctrl+C)" Style="{StaticResource SetLabel}" Foreground="{DynamicResource W_A0}" ToolTip="Para programas que não informam a seleção ao Windows. Faz uma cópia rápida para ler o texto e restaura a área de transferência."/>
+                                    <CheckBox x:Name="SwSelCompat" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="APARÊNCIA" Style="{StaticResource SetHeader}" Margin="0,10,0,0"/>
+                        <Border Style="{StaticResource SetCard}">
+                            <StackPanel>
+                                <Grid Height="34">
+                                    <TextBlock Text="Tema" Style="{StaticResource SetLabel}"/>
+                                    <Border Background="{DynamicResource W_26}" CornerRadius="10" Padding="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="ThemeDarkBtn" Content="Escuro" Style="{StaticResource TabBtn}" Click="Theme_Click" Tag="dark"/>
+                                            <Button x:Name="ThemeLightBtn" Content="Claro" Style="{StaticResource TabBtn}" Click="Theme_Click" Tag="light"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="36">
+                                    <TextBlock Text="Cor de destaque" Style="{StaticResource SetLabel}"/>
+                                    <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Button Content="Sair do programa" Style="{StaticResource SetDangerBtn}" Margin="0,10,0,0"
+                                Click="Exit_Click"/>
+                    </StackPanel>
+
+                    <!-- Seção: Ilha -->
+                    <StackPanel x:Name="SetIsland" Grid.Row="1" Visibility="Collapsed">
+                        <TextBlock Text="PÍLULA" Style="{StaticResource SetHeader}"/>
+                        <Border Style="{StaticResource SetCard}">
+                            <StackPanel>
+                                <Grid Height="32">
+                                    <TextBlock Text="Mostrar segundos na pílula" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwSeconds" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Expandir ao passar o mouse" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwHover" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Mostrar faixa na pílula ao trocar" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwTrack" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Notificações na pílula" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwNotif" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Temperaturas de CPU, placa e memória" Style="{StaticResource SetLabel}"
+                                               ToolTip="Pede permissão de administrador uma vez e instala o driver PawnIO se faltar. A temperatura da GPU funciona sem isso."/>
+                                    <CheckBox x:Name="SwTemp" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="SwTemp_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Seção: Dock -->
+                    <StackPanel x:Name="SetDock" Grid.Row="1" Visibility="Collapsed">
+                        <TextBlock Text="DOCK" Style="{StaticResource SetHeader}"/>
+                        <Border Style="{StaticResource SetCard}">
+                            <StackPanel>
+                                <Grid Height="32">
+                                    <TextBlock Text="Dock de aplicativos" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwDock" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Ocultar a barra de tarefas do Windows" Style="{StaticResource SetLabel}"/>
+                                    <CheckBox x:Name="SwTaskbar" Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" Click="Setting_Click"/>
+                                    <Rectangle Height="1" Fill="{DynamicResource W_14}" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <Grid Height="32">
+                                    <TextBlock Text="Tamanho do dock" Style="{StaticResource SetLabel}"/>
+                                    <Border Background="{DynamicResource W_26}" CornerRadius="10" Padding="2" HorizontalAlignment="Right"
+                                            VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="DockSz0" Content="P" Style="{StaticResource TabBtn}" Click="DockSize_Click" Tag="0" ToolTip="Pequeno"/>
+                                            <Button x:Name="DockSz1" Content="M" Style="{StaticResource TabBtn}" Click="DockSize_Click" Tag="1" ToolTip="Médio"/>
+                                            <Button x:Name="DockSz2" Content="G" Style="{StaticResource TabBtn}" Click="DockSize_Click" Tag="2" ToolTip="Grande"/>
+                                            <Button x:Name="DockSz3" Content="GG" Style="{StaticResource TabBtn}" Click="DockSize_Click" Tag="3" ToolTip="Extra grande"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ABAS no topo; desligar/reiniciar/buscar/ajustes embaixo -->
+                <Grid Grid.Row="0" Grid.RowSpan="5">
+                <!-- Desligar e reiniciar o Windows (pede confirmação dentro da própria ilha) -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                    <Button x:Name="PowerBtn" Style="{StaticResource IconBtn}" Width="28" Height="28"
+                            Click="Power_Click" Tag="shutdown"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" Foreground="{DynamicResource W_A0}"
+                            Content="&#xE7E8;" ToolTip="Desligar o Windows"/>
+                    <Button x:Name="RestartBtn" Style="{StaticResource IconBtn}" Width="28" Height="28"
+                            Click="Power_Click" Tag="restart"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" Foreground="{DynamicResource W_A0}"
+                            Content="&#xE72C;" ToolTip="Reiniciar o Windows"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                    <Button x:Name="SearchBtn" Style="{StaticResource IconBtn}" Width="28" Height="28"
+                            Click="Search_Click"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource W_A0}"
+                            Content="&#xE721;" ToolTip="Buscar no Windows"/>
+                    <Button x:Name="GearBtn" Style="{StaticResource IconBtn}" Width="28" Height="28"
+                            Click="Gear_Click"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource W_A0}"
+                            Content="&#xE713;" ToolTip="Ajustes"/>
+                </StackPanel>
+                <Border Background="{DynamicResource W_26}" CornerRadius="11" Padding="2"
+                        HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="TabMusic" Content="Música" Style="{StaticResource TabBtn}" Click="Tab_Click" Tag="0"/>
+                        <Button x:Name="TabClip" Content="Clipboard" Style="{StaticResource TabBtn}" Click="Tab_Click" Tag="2"/>
+                        <Button x:Name="TabNotes" Content="Notas" Style="{StaticResource TabBtn}" Click="Tab_Click" Tag="7"/>
+                        <Button x:Name="TabShelf" Content="Arquivos" Style="{StaticResource TabBtn}" Click="Tab_Click" Tag="5"/>
+                        <Button x:Name="TabSys" Content="Sistema" Style="{StaticResource TabBtn}" Click="Tab_Click" Tag="4"/>
+                        <Button x:Name="TabPanel" Content="Notificações" Style="{StaticResource TabBtn}" Click="Tab_Click" Tag="1"/>
+                    </StackPanel>
+                </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ============ CONFIRMAÇÃO (desligar / reiniciar) DENTRO DA ILHA ============ -->
+            <Border x:Name="ConfirmOverlay" Background="#66000000" local:Glass.Blur="True" Visibility="Collapsed" Opacity="0"
+                    CornerRadius="{Binding CornerRadius, ElementName=Island}" Padding="24">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border x:Name="ConfirmIconBox" Width="46" Height="46" CornerRadius="23" Background="#26FF453A" HorizontalAlignment="Center">
+                        <TextBlock x:Name="ConfirmIcon" Text="&#xE7E8;" Foreground="#FF453A" FontSize="20"
+                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock x:Name="ConfirmTitle" Text="Desligar o computador?" Foreground="{DynamicResource FgBrush}" FontSize="18"
+                               FontWeight="SemiBold" TextAlignment="Center" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="ConfirmSub" Foreground="{DynamicResource W_A0}" FontSize="12.5" TextAlignment="Center" TextWrapping="Wrap"
+                               MaxWidth="330" Margin="0,5,0,0"
+                               Text="Salve seu trabalho antes de continuar. Os programas abertos serão fechados."/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                        <Button x:Name="ConfirmCancelBtn" Style="{StaticResource DlgBtn}" Background="{DynamicResource W_26}"
+                                Width="150" Height="38" Content="Cancelar" Click="ConfirmCancel_Click"/>
+                        <Button x:Name="ConfirmOkBtn" Style="{StaticResource DlgBtn}" Foreground="White" Background="#FF453A"
+                                Width="150" Height="38" Margin="10,0,0,0" Content="Desligar" Click="ConfirmOk_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

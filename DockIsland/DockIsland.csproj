@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>DockIsland</AssemblyName>
+    <RootNamespace>DockIsland</RootNamespace>
+    <!-- ícone do programa (.exe, atalhos, Alt+Tab) -->
+    <ApplicationIcon>icone.ico</ApplicationIcon>
+    <!-- Abertura rápida: código pré-compilado (ReadyToRun) e sem instrumentação de JIT -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <TieredPGO>false</TieredPGO>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+    <!-- sem a thread de GC em segundo plano: abre um pouco mais rápido e usa menos memória -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <!-- menos arquivos para o Windows carregar/verificar -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- temperaturas de CPU, GPU, memória e placa-mãe (aba Sistema) -->
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+  </ItemGroup>
+
+</Project>
